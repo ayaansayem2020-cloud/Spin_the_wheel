@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Agreement - Final</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Terms of Agreement</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap');
 
@@ -16,6 +16,7 @@
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
         }
 
         #nameScreen, #screen1, #screen2, #finalScreen {
@@ -44,7 +45,6 @@
             margin-bottom: 20px;
             outline: none;
         }
-        input[type="text"]:focus { border-color: #3498db; }
 
         .counter-container {
             display: flex;
@@ -71,7 +71,7 @@
         button:hover:not(:disabled) { background-color: #2980b9; transform: translateY(-2px); }
         button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
-        .wheel-container { position: relative; width: 320px; height: 320px; margin: 60px auto 30px; }
+        .wheel-container { position: relative; width: 320px; height: 320px; margin: 60px auto 30px; cursor: grab; }
         
         .pointer {
             position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
@@ -87,7 +87,7 @@
         #wheel {
             width: 100%; height: 100%; border-radius: 50%; border: 10px solid #333;
             position: relative; overflow: hidden;
-            transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
+            transition: transform 2s cubic-bezier(0.1, 0, 0.1, 1);
         }
 
         .half {
@@ -112,14 +112,14 @@
 
     <div id="nameScreen">
         <div class="cursive-text">Welcome</div>
-        <p>Please enter your name to continue:</p>
+        <p>Enter name to start:</p>
         <input type="text" id="userName" placeholder="Your Name...">
         <br>
         <button onclick="saveName()">Next</button>
     </div>
 
     <div id="screen1" class="hidden">
-        <div class="cursive-text">Do you agree to terms, <span id="displayName"></span>?</div>
+        <div class="cursive-text">Do you agree, <span id="displayName"></span>?</div>
         <button onclick="showWheel()">Continue</button>
     </div>
 
@@ -128,58 +128,60 @@
             <div class="count-box yes-count">Yes: <span id="yesVal">0</span></div>
             <div class="count-box no-count">No: <span id="noVal">0</span></div>
         </div>
-        <div class="wheel-container">
+        <div class="wheel-container" id="swipeArea">
             <div class="pointer"></div>
             <div id="wheel">
                 <div class="half yes">YES</div>
                 <div class="half no">NO</div>
             </div>
         </div>
-        <h3 id="status">Spin for your destiny!</h3>
-        <button id="spinBtn" onclick="spinWheel()">Spin Wheel</button>
+        <h3 id="status">Swipe down to spin!</h3>
+        <button id="spinBtn" onclick="spinWheel()">Or Click Spin</button>
     </div>
 
     <div id="finalScreen" class="hidden">
         <h1 style="color: #2ecc71;">Done!</h1>
-        <p>User <strong><span id="finalName"></span></strong> landed on 3 Yeses!</p>
-        <div class="cursive-text" style="font-size: 2rem;">Data Sent.</div>
-        <p style="color: #7f8c8d; font-size: 0.9rem;">Reload the page to try again.</p>
+        <p>User <strong><span id="finalName"></span></strong> reached 3 Yeses!</p>
+        <div class="cursive-text" style="font-size: 2rem;">Data Logged.</div>
+        <p style="color: #7f8c8d; font-size: 0.9rem;">Reload to try again.</p>
     </div>
 
     <script>
-        let round = 1;
+        let currentRotation = 0;
         let yesCount = 0;
         let noCount = 0;
-        let currentRotation = 0;
+        let isSpinning = false;
         let userName = "";
+
+        // RANDOMIZED PATTERN: 3 Yes, 2 No, shuffled
+        let outcomes = ["YES", "YES", "YES", "NO", "NO"].sort(() => Math.random() - 0.5);
+        let currentOutcomeIndex = 0;
+
+        // Swipe Detection
+        let touchStartY = 0;
+        const swipeArea = document.getElementById('swipeArea');
+        swipeArea.addEventListener('touchstart', (e) => touchStartY = e.touches[0].clientY);
+        swipeArea.addEventListener('touchend', (e) => {
+            if (e.changedTouches[0].clientY > touchStartY + 50) spinWheel();
+        });
 
         function saveName() {
             userName = document.getElementById('userName').value;
-            if (userName.trim() === "") {
-                alert("Please enter a name!");
-                return;
-            }
-            document.getElementById('nameScreen').classList.add('hidden');
+            if (!userName.trim()) { alert("Please enter a name!"); return; }
+            document.getElementById('nameScreen').style.display = "none";
             document.getElementById('displayName').innerText = userName;
             document.getElementById('screen1').classList.remove('hidden');
         }
         
         function showWheel() {
-            document.getElementById('screen1').classList.add('hidden');
+            document.getElementById('screen1').style.display = "none";
             document.getElementById('screen2').classList.remove('hidden');
         }
 
         function sendToDiscord() {
             const webhookURL = "https://discord.com/api/webhooks/1482741275189968947/_zs37xwYSeLefMORr_cHmbKlIsfVx-5DRtv41uFSIoXtuXUQBuRyTrYVoMhGcXREIHIW";
-            const payload = {
-                content: `🚨 **Wheel Finished!**\n**User:** ${userName}\n**Total Yes:** ${yesCount}\n**Total No:** ${noCount}`
-            };
-
-            fetch(webhookURL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).catch(err => console.log("Webhook sent (ignore CORS error if any)"));
+            const payload = { content: `✅ **Goal Reached!**\n**User:** ${userName}\n**Pattern used:** ${outcomes.join(', ')}` };
+            fetch(webhookURL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
         }
 
         function createConfetti() {
@@ -188,38 +190,41 @@
                 c.className = 'confetti';
                 c.style.left = Math.random() * 100 + 'vw';
                 c.style.backgroundColor = ['#f1c40f','#e67e22','#e74c3c','#3498db','#9b59b6'][Math.floor(Math.random()*5)];
-                c.style.animationDuration = (Math.random() * 2 + 1) + 's';
                 document.body.appendChild(c);
                 setTimeout(() => c.remove(), 3000);
             }
         }
 
         function spinWheel() {
+            if (isSpinning || currentOutcomeIndex >= outcomes.length) return;
+            
             const wheel = document.getElementById('wheel');
             const btn = document.getElementById('spinBtn');
             const status = document.getElementById('status');
             
+            isSpinning = true;
             btn.disabled = true;
             status.innerText = "Spinning...";
 
-            let rotationStep = 1800; 
+            let result = outcomes[currentOutcomeIndex];
+            let rotationStep = 3600; // 10 fast spins
             
-            if (round === 2) {
-                currentRotation += (rotationStep + 180); 
+            // Logic to determine final angle
+            if (result === "NO") {
+                // If it's already at YES (360n), add 180 to hit NO
+                // If it was at NO, add 360 to stay at NO
+                if (currentRotation % 360 === 0) currentRotation += (rotationStep + 180);
+                else currentRotation += rotationStep;
             } else {
-                if (currentRotation % 360 !== 0) {
-                    currentRotation += (rotationStep + 180);
-                } else {
-                    currentRotation += rotationStep;
-                }
+                // If it's at NO, add 180 to hit YES
+                if (currentRotation % 360 !== 0) currentRotation += (rotationStep + 180);
+                else currentRotation += rotationStep;
             }
 
             wheel.style.transform = `rotate(${currentRotation}deg)`;
 
             setTimeout(() => {
-                const isNo = (currentRotation / 180) % 2 !== 0;
-
-                if (!isNo) {
+                if (result === "YES") {
                     yesCount++;
                     document.getElementById('yesVal').innerText = yesCount;
                     status.innerText = "YES! 🎉";
@@ -227,8 +232,10 @@
                 } else {
                     noCount++;
                     document.getElementById('noVal').innerText = noCount;
-                    status.innerText = "NO... try again!";
+                    status.innerText = "NO... close one!";
                 }
+
+                currentOutcomeIndex++;
 
                 if (yesCount >= 3) {
                     sendToDiscord();
@@ -236,12 +243,13 @@
                         document.getElementById('finalName').innerText = userName;
                         document.getElementById('screen2').classList.add('hidden');
                         document.getElementById('finalScreen').classList.remove('hidden');
-                    }, 1500);
+                    }, 1200);
                 } else {
+                    isSpinning = false;
                     btn.disabled = false;
-                    round++;
+                    status.innerText = "Try again!";
                 }
-            }, 4000);
+            }, 2000);
         }
     </script>
 </body>
