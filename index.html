@@ -44,13 +44,34 @@
             border: none;
             border-radius: 50px;
             transition: 0.3s;
+            font-weight: bold;
         }
 
         button:hover:not(:disabled) { background-color: #2980b9; transform: scale(1.05); }
         button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
-        .wheel-container { position: relative; width: 320px; height: 320px; margin: 20px auto; }
+        .wheel-container { 
+            position: relative; 
+            width: 320px; 
+            height: 320px; 
+            margin: 40px auto; 
+        }
         
+        /* THE ARROW */
+        .pointer {
+            position: absolute; 
+            top: -35px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent; 
+            border-top: 40px solid #e74c3c; /* Red Arrow */
+            filter: drop-shadow(0 0 5px rgba(231, 76, 60, 0.6));
+            z-index: 30;
+        }
+
         #wheel {
             width: 100%; height: 100%; border-radius: 50%; border: 8px solid #333;
             position: relative; overflow: hidden;
@@ -61,24 +82,18 @@
         .half {
             position: absolute; width: 100%; height: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 1.8rem; color: white;
+            font-weight: bold; font-size: 2rem; color: white;
         }
 
-        /* YES is at the top (0deg), NO is at the bottom (180deg) */
         .yes { background-color: #2ecc71; top: 0; }
-        .no { background-color: #e74c3c; bottom: 0; transform: rotate(180deg); }
-
-        .pointer {
-            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; 
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent; 
-            border-top: 35px solid #333; 
-            z-index: 20;
+        .no { 
+            background-color: #e74c3c; 
+            bottom: 0; 
+            transform: rotate(180deg); /* Flips "NO" so it is readable at the top */
         }
 
         .confetti {
-            position: absolute; width: 100px; height: 10px;
+            position: absolute; width: 10px; height: 10px;
             background-color: #f1c40f; top: -10%;
             animation: fall 3s linear forwards;
         }
@@ -95,6 +110,7 @@
 
     <div id="screen2" class="hidden">
         <div class="pointer"></div>
+        <div id="arrow-label" style="position: absolute; top: -60px; left: 50%; transform: translateX(-50%); font-weight: bold; color: #e74c3c;">TARGET</div>
         <div class="wheel-container">
             <div id="wheel">
                 <div class="half yes">YES</div>
@@ -107,24 +123,22 @@
 
     <script>
         let round = 1;
-        let currentTotalRotation = 0;
+        let currentRotation = 0;
         
         function showWheel() {
-            document.getElementById('screen1').classList.add('hidden');
+            document.getElementById('screen1').style.display = 'none';
             document.getElementById('screen2').classList.remove('hidden');
         }
 
         function createConfetti() {
-            for(let i=0; i<50; i++) {
+            for(let i=0; i<60; i++) {
                 const c = document.createElement('div');
                 c.className = 'confetti';
                 c.style.left = Math.random() * 100 + 'vw';
-                c.style.width = Math.random() * 10 + 5 + 'px';
-                c.style.height = c.style.width;
                 c.style.backgroundColor = ['#f1c40f','#e67e22','#e74c3c','#3498db','#9b59b6'][Math.floor(Math.random()*5)];
-                c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                c.style.animationDuration = (Math.random() * 2 + 1) + 's';
                 document.body.appendChild(c);
-                setTimeout(() => c.remove(), 4000);
+                setTimeout(() => c.remove(), 3000);
             }
         }
 
@@ -136,27 +150,30 @@
             btn.disabled = true;
             status.innerText = "Spinning...";
 
-            // Every 360deg is a full rotation back to YES.
-            // Adding 180deg lands on NO.
-            let extraDeg = 0; 
-            if (round === 2) {
-                extraDeg = 180; // Land on NO
+            // Logic reset: 
+            // 0 degrees = YES is at top
+            // 180 degrees = NO is at top
+            
+            let rotationStep = 1800; // 5 full spins
+            
+            if (round === 1) {
+                currentRotation += rotationStep; // Lands on YES (0 mod 360)
+            } else if (round === 2) {
+                currentRotation += (rotationStep + 180); // Lands on NO
+            } else if (round === 3) {
+                currentRotation += (rotationStep + 180); // Moves from NO back to YES
             } else {
-                extraDeg = 0;   // Land on YES (Rounds 1, 3, 4+)
+                currentRotation += rotationStep; // Stay on YES
             }
 
-            // We add 1440 (4 full spins) + the extra to make it look real
-            currentTotalRotation += (1440 + extraDeg);
-            
-            // If we just landed on NO last time, we need to spin an extra 180 to get back to YES
-            // This logic keeps the wheel spinning forward instead of backward
-            if (round === 3) currentTotalRotation += 180; 
-
-            wheel.style.transform = `rotate(${currentTotalRotation}deg)`;
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
 
             setTimeout(() => {
                 btn.disabled = false;
-                if (round !== 2) {
+                // Check if current position is a multiple of 360 (YES) or has 180 extra (NO)
+                const isNo = (currentRotation / 180) % 2 !== 0;
+
+                if (!isNo) {
                     status.innerText = "YES! 🎉";
                     createConfetti();
                 } else {
