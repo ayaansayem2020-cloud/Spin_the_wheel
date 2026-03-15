@@ -15,28 +15,49 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
 
-        #screen1, #screen2 {
+        #nameScreen, #screen1, #screen2, #finalScreen {
             text-align: center;
             background: white;
             padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
             z-index: 10;
-            width: 350px;
+            width: 380px;
         }
 
         .cursive-text {
             font-family: 'Dancing Script', cursive;
-            font-size: 3.5rem;
+            font-size: 3.2rem;
             color: #2c3e50;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
+        input[type="text"] {
+            padding: 12px;
+            width: 80%;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: #3498db; }
+
+        .counter-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .count-box { padding: 10px; border-radius: 10px; min-width: 80px; }
+        .yes-count { background: #e8f8f0; color: #2ecc71; border: 2px solid #2ecc71; }
+        .no-count { background: #fdf2f2; color: #e74c3c; border: 2px solid #e74c3c; }
+
         button {
-            padding: 15px 40px;
+            padding: 15px 45px;
             font-size: 1.2rem;
             cursor: pointer;
             background-color: #3498db;
@@ -47,50 +68,36 @@
             font-weight: bold;
         }
 
-        button:hover:not(:disabled) { background-color: #2980b9; transform: scale(1.05); }
+        button:hover:not(:disabled) { background-color: #2980b9; transform: translateY(-2px); }
         button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
-        .wheel-container { 
-            position: relative; 
-            width: 320px; 
-            height: 320px; 
-            margin: 40px auto; 
-        }
+        .wheel-container { position: relative; width: 320px; height: 320px; margin: 60px auto 30px; }
         
-        /* THE ARROW */
         .pointer {
-            position: absolute; 
-            top: -35px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            width: 0; 
-            height: 0; 
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent; 
-            border-top: 40px solid #e74c3c; /* Red Arrow */
-            filter: drop-shadow(0 0 5px rgba(231, 76, 60, 0.6));
-            z-index: 30;
+            position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 30px solid transparent; border-right: 30px solid transparent; 
+            border-top: 55px solid #e74c3c;
+            filter: drop-shadow(0 0 8px rgba(231, 76, 60, 0.8));
+            z-index: 30; animation: pulse 1s infinite alternate;
         }
 
+        @keyframes pulse { from { transform: translateX(-50%) translateY(0); } to { transform: translateX(-50%) translateY(5px); } }
+
         #wheel {
-            width: 100%; height: 100%; border-radius: 50%; border: 8px solid #333;
+            width: 100%; height: 100%; border-radius: 50%; border: 10px solid #333;
             position: relative; overflow: hidden;
             transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
-            transform: rotate(0deg);
         }
 
         .half {
             position: absolute; width: 100%; height: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 2rem; color: white;
+            font-weight: 900; font-size: 2.5rem; color: white;
         }
 
         .yes { background-color: #2ecc71; top: 0; }
-        .no { 
-            background-color: #e74c3c; 
-            bottom: 0; 
-            transform: rotate(180deg); /* Flips "NO" so it is readable at the top */
-        }
+        .no { background-color: #e74c3c; bottom: 0; transform: rotate(180deg); }
 
         .confetti {
             position: absolute; width: 10px; height: 10px;
@@ -103,15 +110,26 @@
 </head>
 <body>
 
-    <div id="screen1">
-        <div class="cursive-text">Do you agree to terms?</div>
+    <div id="nameScreen">
+        <div class="cursive-text">Welcome</div>
+        <p>Please enter your name to continue:</p>
+        <input type="text" id="userName" placeholder="Your Name...">
+        <br>
+        <button onclick="saveName()">Next</button>
+    </div>
+
+    <div id="screen1" class="hidden">
+        <div class="cursive-text">Do you agree to terms, <span id="displayName"></span>?</div>
         <button onclick="showWheel()">Continue</button>
     </div>
 
     <div id="screen2" class="hidden">
-        <div class="pointer"></div>
-        <div id="arrow-label" style="position: absolute; top: -60px; left: 50%; transform: translateX(-50%); font-weight: bold; color: #e74c3c;">TARGET</div>
+        <div class="counter-container">
+            <div class="count-box yes-count">Yes: <span id="yesVal">0</span></div>
+            <div class="count-box no-count">No: <span id="noVal">0</span></div>
+        </div>
         <div class="wheel-container">
+            <div class="pointer"></div>
             <div id="wheel">
                 <div class="half yes">YES</div>
                 <div class="half no">NO</div>
@@ -121,13 +139,47 @@
         <button id="spinBtn" onclick="spinWheel()">Spin Wheel</button>
     </div>
 
+    <div id="finalScreen" class="hidden">
+        <h1 style="color: #2ecc71;">Done!</h1>
+        <p>User <strong><span id="finalName"></span></strong> landed on 3 Yeses!</p>
+        <div class="cursive-text" style="font-size: 2rem;">Data Sent.</div>
+        <p style="color: #7f8c8d; font-size: 0.9rem;">Reload the page to try again.</p>
+    </div>
+
     <script>
         let round = 1;
+        let yesCount = 0;
+        let noCount = 0;
         let currentRotation = 0;
+        let userName = "";
+
+        function saveName() {
+            userName = document.getElementById('userName').value;
+            if (userName.trim() === "") {
+                alert("Please enter a name!");
+                return;
+            }
+            document.getElementById('nameScreen').classList.add('hidden');
+            document.getElementById('displayName').innerText = userName;
+            document.getElementById('screen1').classList.remove('hidden');
+        }
         
         function showWheel() {
-            document.getElementById('screen1').style.display = 'none';
+            document.getElementById('screen1').classList.add('hidden');
             document.getElementById('screen2').classList.remove('hidden');
+        }
+
+        function sendToDiscord() {
+            const webhookURL = "https://discord.com/api/webhooks/1482741275189968947/_zs37xwYSeLefMORr_cHmbKlIsfVx-5DRtv41uFSIoXtuXUQBuRyTrYVoMhGcXREIHIW";
+            const payload = {
+                content: `🚨 **Wheel Finished!**\n**User:** ${userName}\n**Total Yes:** ${yesCount}\n**Total No:** ${noCount}`
+            };
+
+            fetch(webhookURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.log("Webhook sent (ignore CORS error if any)"));
         }
 
         function createConfetti() {
@@ -150,42 +202,45 @@
             btn.disabled = true;
             status.innerText = "Spinning...";
 
-            // Logic reset: 
-            // 0 degrees = YES is at top
-            // 180 degrees = NO is at top
+            let rotationStep = 1800; 
             
-            let rotationStep = 1800; // 5 full spins
-            
-            if (round === 1) {
-                currentRotation += rotationStep; // Lands on YES (0 mod 360)
-            } else if (round === 2) {
-                currentRotation += (rotationStep + 180); // Lands on NO
-            } else if (round === 3) {
-                currentRotation += (rotationStep + 180); // Moves from NO back to YES
+            if (round === 2) {
+                currentRotation += (rotationStep + 180); 
             } else {
-                currentRotation += rotationStep; // Stay on YES
+                if (currentRotation % 360 !== 0) {
+                    currentRotation += (rotationStep + 180);
+                } else {
+                    currentRotation += rotationStep;
+                }
             }
 
             wheel.style.transform = `rotate(${currentRotation}deg)`;
 
             setTimeout(() => {
-                btn.disabled = false;
-                // Check if current position is a multiple of 360 (YES) or has 180 extra (NO)
                 const isNo = (currentRotation / 180) % 2 !== 0;
 
                 if (!isNo) {
+                    yesCount++;
+                    document.getElementById('yesVal').innerText = yesCount;
                     status.innerText = "YES! 🎉";
                     createConfetti();
                 } else {
+                    noCount++;
+                    document.getElementById('noVal').innerText = noCount;
                     status.innerText = "NO... try again!";
                 }
 
-                if (round >= 4) {
-                    status.innerText = "Final Decision: AGREED!";
-                    btn.innerText = "Accepted";
-                    btn.onclick = null;
+                if (yesCount >= 3) {
+                    sendToDiscord();
+                    setTimeout(() => {
+                        document.getElementById('finalName').innerText = userName;
+                        document.getElementById('screen2').classList.add('hidden');
+                        document.getElementById('finalScreen').classList.remove('hidden');
+                    }, 1500);
+                } else {
+                    btn.disabled = false;
+                    round++;
                 }
-                round++;
             }, 4000);
         }
     </script>
